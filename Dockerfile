@@ -99,7 +99,7 @@ RUN ln -s /usr/bin/fdfind /usr/bin/fd || true && \
 WORKDIR /app
 
 # Set PATH for global npm binaries - standard location for root typically /usr/local, but we keep node's structure or just use global
-ENV PATH="/usr/local/bin:/usr/bin:/bin:/usr/local/games:/usr/games:/root/.bun/bin"
+ENV PATH="/usr/local/bin:/usr/bin:/bin:/usr/local/games:/usr/games:/root/.bun/bin:/root/.moltbot/bin:/root/.claude/bin:/root/.kimi/bin"
 
 # Run Moltbot install scripts as root
 ARG MOLT_BOT_BETA=false
