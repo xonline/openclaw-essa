@@ -339,18 +339,7 @@ cat >"$CONFIG_FILE" <<EOF
         "enabled": true
       },
       "slack": {
-        "enabled": true
-      },
-      "signal": {
-        "enabled": true
-      },
-      "imessage": {
-        "enabled": false
-      },
-      "google-antigravity-auth": {
-        "enabled": true
-      }
-    }
+    "enabled": {}
   },
   "auth": {
     "profiles": {
@@ -362,6 +351,16 @@ cat >"$CONFIG_FILE" <<EOF
   }
 }
 EOF
+
+# Fix permissions as requested by doctor
+if [ -f "$CONFIG_FILE" ]; then
+    chmod 600 "$CONFIG_FILE"
+fi
+
+# Ensure credentials directory exists (CRITICAL FIX)
+# explicitly using /root/.openclaw/credentials in case vars drift
+mkdir -p /root/.openclaw/credentials
+mkdir -p "$AGENTS_STATE/main/sessions"
 
 fi
 
@@ -436,9 +435,16 @@ seed_agent "linkding" "Linkding Agent"
 seed_agent "dbadmin" "DB Administrator"
 
 # Export state directory for the binary
+# Export state directory for the binary
 export OPENCLAW_STATE_DIR="$OPENCLAW_STATE"
-export CLAWDBOT_STATE_DIR="$OPENCLAW_STATE"
-export MOLTBOT_STATE_DIR="$OPENCLAW_STATE"
+
+# Trigger sandbox image setup (async to speed up boot)
+if [ -f "scripts/sandbox-setup.sh" ]; then
+    bash scripts/sandbox-setup.sh > /var/log/sandbox_setup.log 2>&1 &
+fi
+if [ -f "scripts/sandbox-browser-setup.sh" ]; then
+    bash scripts/sandbox-browser-setup.sh > /var/log/sandbox_browser_setup.log 2>&1 &
+fi
 
 # Resolve public URL (Coolify injects SERVICE_FQDN_OPENCLAW)
 if [ -n "$SERVICE_FQDN_OPENCLAW" ]; then
