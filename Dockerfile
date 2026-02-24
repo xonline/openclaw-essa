@@ -49,7 +49,7 @@ FROM base AS runtimes
 ENV BUN_INSTALL="/data/.bun" \
     PATH="/usr/local/go/bin:/data/.bun/bin:/data/.bun/install/global/bin:$PATH"
 
-# Install Bun (allow bun to manage compatible node)
+# Install Bun
 RUN curl -fsSL https://bun.sh/install | bash
 
 # Python tools
@@ -68,7 +68,7 @@ ENV OPENCLAW_BETA=${OPENCLAW_BETA} \
     OPENCLAW_NO_ONBOARD=1 \
     NPM_CONFIG_UNSAFE_PERM=true
 
-# Bun global installs (with cache)
+# Bun global installs
 RUN --mount=type=cache,target=/data/.bun/install/cache \
     bun install -g vercel @marp-team/marp-cli https://github.com/tobi/qmd && \
     bun pm -g untrusted && \
@@ -85,16 +85,15 @@ RUN --mount=type=cache,target=/data/.npm \
     npm install -g openclaw; \
     fi 
 
-# 🦞 FIX: Install uv correctly using the official installer
-# Old/Broken line: RUN curl -L https://github.com/azlux/uv...
-RUN curl -LsSf https://astral.sh/uv/install.sh | env UV_INSTALL_DIR="/usr/local/bin" sh
+# 🦞 FIX 1: Install uv via PIP (Bypasses network blocks on Oracle)
+RUN pip3 install uv --break-system-packages
 
-# Claude + Kimi
+# Claude + Kimi (Check paths after install)
 RUN curl -fsSL https://claude.ai/install.sh | bash && \
     curl -L https://code.kimi.com/install.sh | bash && \
     command -v uv
 
-# Make sure uv and other local bins are available
+# Ensure paths
 ENV PATH="/root/.local/bin:${PATH}"
 
 ########################################
@@ -102,18 +101,13 @@ ENV PATH="/root/.local/bin:${PATH}"
 ########################################
 FROM dependencies AS final
 
-# 🦞 FIX: Download the Static ARM64 Docker Binary manually.
-# This bypasses the Alpine/Debian incompatibility that broke the previous fix.
-RUN curl -fsSL https://download.docker.com/linux/static/stable/aarch64/docker-26.1.3.tgz -o docker.tgz \
-    && tar xzvf docker.tgz \
-    && mv docker/docker /usr/local/bin/docker \
-    && chmod +x /usr/local/bin/docker \
-    && rm -rf docker.tgz docker/
+# 🦞 FIX 2: Copy official Docker CLI (Fixes restart loop)
+COPY --from=docker:cli /usr/local/bin/docker /usr/local/bin/docker
 
 WORKDIR /app
 COPY . .
 
-# Symlinks
+# Symlinks & Permissions
 RUN ln -sf /data/.claude/bin/claude /usr/local/bin/claude || true && \
     ln -sf /data/.kimi/bin/kimi /usr/local/bin/kimi || true && \
     chmod +x /app/scripts/*.sh
