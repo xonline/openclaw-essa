@@ -102,9 +102,13 @@ ENV PATH="/root/.local/bin:${PATH}"
 ########################################
 FROM dependencies AS final
 
-# 🦞 FIX: Copy the official Docker CLI binary directly.
-# This works on ARM64 (Oracle) and avoids all "command not found" errors.
-COPY --from=docker:cli /usr/local/bin/docker /usr/local/bin/docker
+# 🦞 FIX: Download the Static ARM64 Docker Binary manually.
+# This bypasses the Alpine/Debian incompatibility that broke the previous fix.
+RUN curl -fsSL https://download.docker.com/linux/static/stable/aarch64/docker-26.1.3.tgz -o docker.tgz \
+    && tar xzvf docker.tgz \
+    && mv docker/docker /usr/local/bin/docker \
+    && chmod +x /usr/local/bin/docker \
+    && rm -rf docker.tgz docker/
 
 WORKDIR /app
 COPY . .
