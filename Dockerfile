@@ -102,8 +102,8 @@ ENV PATH="/root/.local/bin:${PATH}"
 ########################################
 FROM dependencies AS final
 
-# 🦞 FIX: Copy the official Docker CLI binary directly
-# This is 100% reliable and skips all network/apt errors
+# 🦞 FIX: Copy the official Docker CLI binary directly.
+# This works on ARM64 (Oracle) and avoids all "command not found" errors.
 COPY --from=docker:cli /usr/local/bin/docker /usr/local/bin/docker
 
 WORKDIR /app
