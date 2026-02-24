@@ -102,13 +102,9 @@ ENV PATH="/root/.local/bin:${PATH}"
 ########################################
 FROM dependencies AS final
 
-# 🦞 FIX: Download the Static ARM64 Docker Binary (Self-Contained)
-# This bypasses all 'missing library' and 'apt' errors.
-RUN curl -fsSL https://download.docker.com/linux/static/stable/aarch64/docker-26.1.3.tgz -o docker.tgz \
-    && tar xzvf docker.tgz \
-    && mv docker/docker /usr/local/bin/docker \
-    && chmod +x /usr/local/bin/docker \
-    && rm -rf docker.tgz docker/
+# 🦞 FIX: Copy the official Docker CLI binary directly
+# This is 100% reliable and skips all network/apt errors
+COPY --from=docker:cli /usr/local/bin/docker /usr/local/bin/docker
 
 WORKDIR /app
 COPY . .
