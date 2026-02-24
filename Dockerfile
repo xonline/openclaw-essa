@@ -102,10 +102,9 @@ ENV PATH="/root/.local/bin:${PATH}"
 ########################################
 FROM dependencies AS final
 
-# 🦞 FIX: Force install Docker CLI in the final stage so sandbox-setup.sh can find it
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    docker-ce-cli \
-    && rm -rf /var/lib/apt/lists/*
+# 🦞 FIX: Copy the Docker binary directly from the 'system-tools' stage
+# This bypasses the network error completely.
+COPY --from=system-tools /usr/bin/docker /usr/bin/docker
 
 WORKDIR /app
 COPY . .
