@@ -34,7 +34,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     chromium \
     && rm -rf /var/lib/apt/lists/*
 
-# 🔥 CRITICAL FIX (native modules)
+# Fix native modules
 ENV PYTHON=/usr/bin/python3 \
     npm_config_python=/usr/bin/python3
 
@@ -74,7 +74,7 @@ RUN --mount=type=cache,target=/data/.bun/install/cache \
     bun pm -g untrusted && \
     bun install -g @openai/codex @google/gemini-cli opencode-ai @steipete/summarize @hyperbrowser/agent clawhub
 
-# Ensure global npm bin is in PATH
+# Ensure global npm bin is in PATH for this stage
 ENV PATH="/usr/local/bin:/usr/local/lib/node_modules/.bin:${PATH}"
 
 # OpenClaw (npm install)
@@ -85,10 +85,11 @@ RUN --mount=type=cache,target=/data/.npm \
     npm install -g openclaw; \
     fi 
 
-# 🦞 FIX 1: Install uv via PIP (Bypasses network blocks on Oracle)
+# 🦞 FIX 1: Install uv via PIP (Actually use pip this time!)
+# This is much more reliable on Oracle Cloud than curl
 RUN pip3 install uv --break-system-packages
 
-# Claude + Kimi (Check paths after install)
+# Claude + Kimi
 RUN curl -fsSL https://claude.ai/install.sh | bash && \
     curl -L https://code.kimi.com/install.sh | bash && \
     command -v uv
@@ -112,8 +113,9 @@ RUN ln -sf /data/.claude/bin/claude /usr/local/bin/claude || true && \
     ln -sf /data/.kimi/bin/kimi /usr/local/bin/kimi || true && \
     chmod +x /app/scripts/*.sh
 
-# 🦞 FIX: Add npm global bin path so 'openclaw' command works
-# OLDENV PATH="/root/.local/bin:/usr/local/go/bin:/usr/local/bin:/usr/bin:/bin:/data/.bun/bin:/data/.bun/install/global/bin:/data/.claude/bin:/data/.kimi/bin"
+# 🦞 FIX 3: THE PATH FIX
+# We add '/usr/local/lib/node_modules/.bin' so linux can find the 'openclaw' command
 ENV PATH="/usr/local/lib/node_modules/.bin:/usr/local/bin:/root/.local/bin:/usr/local/go/bin:/usr/bin:/bin:/data/.bun/bin:/data/.bun/install/global/bin:/data/.claude/bin:/data/.kimi/bin"
+
 EXPOSE 18789
 CMD ["bash", "/app/scripts/bootstrap.sh"]
