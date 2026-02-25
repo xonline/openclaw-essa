@@ -7,7 +7,7 @@ import json
 
 
 @browser(
-    headless=False,
+    headless=True,
     reuse_driver=True,
     block_images_and_css=False,
     close_on_crash=True,
